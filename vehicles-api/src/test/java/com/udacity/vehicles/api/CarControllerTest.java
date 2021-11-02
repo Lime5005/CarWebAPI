@@ -1,14 +1,13 @@
 package com.udacity.vehicles.api;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -22,6 +21,7 @@ import com.udacity.vehicles.domain.car.Details;
 import com.udacity.vehicles.domain.manufacturer.Manufacturer;
 import com.udacity.vehicles.service.CarService;
 import java.net.URI;
+import java.net.http.HttpResponse;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,9 +29,12 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.json.AutoConfigureJsonTesters;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
@@ -122,7 +125,6 @@ public class CarControllerTest {
          *   a vehicle by ID. This should utilize the car from `getCar()` below.
          */
         carService.save(getCar());
-        Car car = getCar();
         mvc.perform(
                         get(("/cars/1"))
                                 .contentType(MediaType.APPLICATION_JSON))
@@ -132,6 +134,18 @@ public class CarControllerTest {
                 .andExpect(jsonPath("$.condition", equalTo(Condition.USED.toString())));
 
         verify(carService, times(1)).findById(1L);
+    }
+
+    @Test
+    public void updateCar() throws Exception {
+        Car car = getCar();
+        car.setLocation(new Location(42.76593, 38.34268));
+        car.setCondition(Condition.NEW);
+        mvc.perform(put(new URI("/cars/1"))
+                        .content(json.write(car).getJson())
+                        .contentType(MediaType.APPLICATION_JSON_UTF8)
+                        .accept(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(status().is(200));
     }
 
     /**
